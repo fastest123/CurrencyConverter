@@ -11,6 +11,6 @@ Currency Converter
 5.   For checking Role based access control (RBAC) /v1/currency/admin_convert_amount?amount=100&FCurrency=usd&BaseCurrency=EUR&provider=frankfurter
 6.   For Version checking /v1/currency/convert_amount?amount=120&FCurrency=usd&BaseCurrency=inr&provider=frankfurter /v2/currency/convert_amount?amount=120&FCurrency=usd&BaseCurrency=inr&provider=frankfurter
 
-     Caching : In memory caching implemented using memoryCache to minimize the for exchange rate for base and To currency to calculate the amount.
-     By Default - currency provider is - frankfurter, It will allow multiple exchange rate providers for future integration.
+     Caching : In memory caching implemented using memoryCache to minimize the exchange rate for base and To-currency to calculate the amount.
+     By Default - currency provider is - frankfurter, Factory pattern implementation will allow to integrate multiple exchange rate providers.
      Serilog logging implemented to log the response to a file located in "logs/api_log.txt".
