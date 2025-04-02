@@ -52,8 +52,7 @@ namespace CurrencyConverter.Services.Auth
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var secretKey = Encoding.ASCII.GetBytes(_secretKey);
                 var expires = GetExpiry();
-                // var siteIds = Array.ConvertAll(employee.Result.SitesAssigned.Split(","), int.Parse);
-
+                
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(new Claim[] {
@@ -69,8 +68,7 @@ namespace CurrencyConverter.Services.Auth
                 var accessToken = tokenHandler.WriteToken(token);
 
                 //  Insert token details to database.
-                //await _authenticationUserRepository.InsertToken(employee.Result.id, accessToken, expires);
-            //}
+               
             serviceResponse.Result = new Token()
             {
                 AccessToken = accessToken,

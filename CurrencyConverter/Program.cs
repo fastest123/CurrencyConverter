@@ -23,8 +23,16 @@ if (!Directory.Exists(logDirectory))
 }
 
 // Set up Serilog to read from appsettings.json
+//Log.Logger = new LoggerConfiguration()
+//    .ReadFrom.Configuration(builder.Configuration) // Read from appsettings.json
+//    .CreateLogger();
+
 Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration) // Read from appsettings.json
+    .MinimumLevel.Information()  // Log events of this level or higher
+    .WriteTo.Console()  // Log to console (for local debugging)
+    .WriteTo.Seq("http://localhost:5341")  // Send logs to Seq (replace with your Seq server URL)
+    .Enrich.FromLogContext()  // Add contextual information to logs
+    .Enrich.WithProperty("Application", "CurrencyApi")  // Add a custom property
     .CreateLogger();
 
 builder.Host.UseSerilog(); // Use Serilog for logging
@@ -44,10 +52,10 @@ builder.Services.AddApiVersioning(x => {
 builder.Services.AddEndpointsApiExplorer();
 
 //Authorize checking in swagger
-builder.Services.AddSwaggerGen( c =>
+builder.Services.AddSwaggerGen(c =>
 {
 
-   
+
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "V1",
@@ -71,22 +79,22 @@ builder.Services.AddSwaggerGen( c =>
         Scheme = "Bearer"
     });
     var oar = new OpenApiSecurityRequirement();
-    oar.Add(
-        new OpenApiSecurityScheme
-        {
-            Reference = new OpenApiReference
-            {
-                Type = ReferenceType.SecurityScheme,
-                Id = "bearerAuth"
-            },
-            Scheme = "oauth2",
-            Name = "Bearer",
-            In = ParameterLocation.Header,
-        }, new List<string>());
-    c.AddSecurityRequirement(oar);
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
+   oar.Add(
+       new OpenApiSecurityScheme
+       {
+           Reference = new OpenApiReference
+           {
+               Type = ReferenceType.SecurityScheme,
+               Id = "bearerAuth"
+           },
+           Scheme = "oauth2",
+           Name = "Bearer",
+           In = ParameterLocation.Header,
+       }, new List<string>());
+   c.AddSecurityRequirement(oar);
+   var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+   var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+   c.IncludeXmlComments(xmlPath);
     //xml comments
 }
 );
@@ -127,6 +135,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("UserOnly", policy => policy.RequireRole("User"));
 });
 
+builder.Services.AddLogging(loggingBuilder =>
+{
+    loggingBuilder.AddSerilog();
+});
+
 var app = builder.Build();
 
 
@@ -139,7 +152,11 @@ app.UseAuthentication();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "BambooTest API v1");
+        options.SwaggerEndpoint("/swagger/v2/swagger.json", "BambooTest API v2");
+    });
 }
 //app.UseSerilogRequestLogging();
 app.UseMiddleware<RequestResponseLoggingMiddleware>();

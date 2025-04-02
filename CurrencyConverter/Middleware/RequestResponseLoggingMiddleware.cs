@@ -24,13 +24,19 @@ namespace CurrencyConverter.Middleware
         {
             context.Request.EnableBuffering();
 
+            var startTime = DateTime.UtcNow;
+            var clientIp = context.Connection.RemoteIpAddress?.ToString();
+            var httpMethod = context.Request.Method;
+            var targetEndpoint = context.Request.Path;
+            var clientId = context.User?.Claims.FirstOrDefault(c => c.Type == "clientId")?.Value;
 
+           
             // Enable buffering to read the request body multiple times
 
             var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
 
             context.Request.Body.Seek(0, SeekOrigin.Begin); // Rewind the body stream
-            var userId = context.User?.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+            
             // Capture the response body
             var originalResponseBody = context.Response.Body;
             var queryString = context.Request.QueryString.ToString();
@@ -47,11 +53,15 @@ namespace CurrencyConverter.Middleware
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     var responseBody = await new StreamReader(memoryStream).ReadToEndAsync();
 
+                    var responseCode = context.Response.StatusCode;
+                    var responseTime = DateTime.UtcNow - startTime;
 
+                    Log.Information("Response: {Method} {Endpoint} responded with {ResponseCode} in {ResponseTime}ms , ClientId {clientId} and ClientIp {clientIp}",
+                    httpMethod, targetEndpoint, responseCode, responseTime.TotalMilliseconds, clientId, clientIp);
                     // Log request and response bodies to Serilog
-                    _logger.Information("Client Id: {UserId}, Method :{HttpMethod}, Endpoint : {Endpoint}, " +
-                        "Response Body: {ResponseBody}", userId,  context.Request.Method,
-                        context.Request.Path,responseBody);
+                    //_logger.Information("Client Id: {UserId}, Method :{HttpMethod}, Endpoint : {Endpoint}, " +
+                    //    "Response Body: {ResponseBody}", clientId,  context.Request.Method,
+                    //    context.Request.Path,responseBody);
 
                     // Copy the response back to the original response stream
 
@@ -60,7 +70,7 @@ namespace CurrencyConverter.Middleware
                 catch (Exception ex)
                 {
                     _logger.Information("Client Id: {UserId}, Method :{HttpMethod}, Endpoint : {Endpoint}, " +
-                        "Response Body: {ResponseBody}", userId, context.Request.Method,
+                        "Response Body: {ResponseBody}", clientId, context.Request.Method,
                             context.Request.Path, ex.Message);
                     // return;
 
